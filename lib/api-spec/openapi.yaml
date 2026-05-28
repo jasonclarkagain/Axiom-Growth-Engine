@@ -1,22 +1,31 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Axiom Digital Core API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: leads
+    description: Lead and consultation capture
+  - name: planner
+    description: Business growth planner
+  - name: testimonials
+    description: Client testimonials
+  - name: case-studies
+    description: Portfolio case studies
+  - name: services
+    description: Service catalog
+
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,13 +33,389 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /leads:
+    post:
+      operationId: submitLead
+      tags: [leads]
+      summary: Submit a consultation lead
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LeadInput"
+      responses:
+        "201":
+          description: Lead submitted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Lead"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+  /planner/estimate:
+    post:
+      operationId: generateEstimate
+      tags: [planner]
+      summary: Generate a business growth plan estimate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PlannerInput"
+      responses:
+        "200":
+          description: Estimate generated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlannerEstimate"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+  /testimonials:
+    get:
+      operationId: listTestimonials
+      tags: [testimonials]
+      summary: List all client testimonials
+      responses:
+        "200":
+          description: List of testimonials
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Testimonial"
+
+  /case-studies:
+    get:
+      operationId: listCaseStudies
+      tags: [case-studies]
+      summary: List all portfolio case studies
+      parameters:
+        - name: category
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [infrastructure, influx, automation, all]
+      responses:
+        "200":
+          description: List of case studies
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CaseStudy"
+
+  /case-studies/{id}:
+    get:
+      operationId: getCaseStudy
+      tags: [case-studies]
+      summary: Get a single case study
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Case study found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CaseStudy"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+  /services:
+    get:
+      operationId: listServices
+      tags: [services]
+      summary: List all services by pillar
+      responses:
+        "200":
+          description: List of services
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Service"
+
+  /stats/summary:
+    get:
+      operationId: getStatsSummary
+      tags: [leads]
+      summary: Get aggregate stats for the hero section
+      responses:
+        "200":
+          description: Summary stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StatsSummary"
+
 components:
   schemas:
     HealthStatus:
       type: object
+      required: [status]
       properties:
         status:
           type: string
-      required:
-        - status
 
+    ApiError:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+
+    LeadInput:
+      type: object
+      required: [name, email, businessType, message]
+      properties:
+        name:
+          type: string
+          minLength: 1
+        email:
+          type: string
+          format: email
+        phone:
+          type: ["string", "null"]
+        businessType:
+          type: string
+        message:
+          type: string
+          minLength: 1
+        selectedServices:
+          type: array
+          items:
+            type: string
+        plannerData:
+          type: ["string", "null"]
+
+    Lead:
+      type: object
+      required: [id, name, email, businessType, message, createdAt]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+        phone:
+          type: ["string", "null"]
+        businessType:
+          type: string
+        message:
+          type: string
+        selectedServices:
+          type: array
+          items:
+            type: string
+        plannerData:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    PlannerInput:
+      type: object
+      required: [foundation, trafficOptions, automationOptions]
+      properties:
+        foundation:
+          type: string
+          enum: [landing_page, corporate_website, fullstack_app]
+        trafficOptions:
+          type: array
+          items:
+            type: string
+            enum: [social_media, seo, paid_ads]
+        automationOptions:
+          type: array
+          items:
+            type: string
+            enum: [booking, lead_funnels, crm, ai_receptionist]
+
+    PlannerEstimate:
+      type: object
+      required: [totalInvestment, timeline, deliverables, roiProjection]
+      properties:
+        totalInvestment:
+          type: object
+          required: [min, max]
+          properties:
+            min:
+              type: integer
+            max:
+              type: integer
+        timeline:
+          type: object
+          required: [weeks, phases]
+          properties:
+            weeks:
+              type: integer
+            phases:
+              type: array
+              items:
+                $ref: "#/components/schemas/Phase"
+        deliverables:
+          type: array
+          items:
+            $ref: "#/components/schemas/Deliverable"
+        roiProjection:
+          type: object
+          required: [leadsPerMonth, revenueImpact, timeSavedHours]
+          properties:
+            leadsPerMonth:
+              type: integer
+            revenueImpact:
+              type: string
+            timeSavedHours:
+              type: integer
+
+    Phase:
+      type: object
+      required: [name, weeks, description]
+      properties:
+        name:
+          type: string
+        weeks:
+          type: integer
+        description:
+          type: string
+
+    Deliverable:
+      type: object
+      required: [title, description, pillar]
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        pillar:
+          type: string
+          enum: [infrastructure, influx, automation]
+
+    Testimonial:
+      type: object
+      required: [id, name, role, company, quote, rating, pillar]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        role:
+          type: string
+        company:
+          type: string
+        quote:
+          type: string
+        rating:
+          type: integer
+        pillar:
+          type: string
+
+    CaseStudy:
+      type: object
+      required: [id, title, client, category, heroMetric, visualBrand, businessVictory, tags]
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        client:
+          type: string
+        category:
+          type: string
+          enum: [infrastructure, influx, automation]
+        heroMetric:
+          type: string
+        visualBrand:
+          type: object
+          required: [description, highlights]
+          properties:
+            description:
+              type: string
+            highlights:
+              type: array
+              items:
+                type: string
+        businessVictory:
+          type: object
+          required: [description, stats]
+          properties:
+            description:
+              type: string
+            stats:
+              type: array
+              items:
+                $ref: "#/components/schemas/Stat"
+        tags:
+          type: array
+          items:
+            type: string
+
+    Stat:
+      type: object
+      required: [label, value]
+      properties:
+        label:
+          type: string
+        value:
+          type: string
+
+    Service:
+      type: object
+      required: [id, name, pillar, tagline, description, features, startingPrice]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        pillar:
+          type: string
+          enum: [infrastructure, influx, automation]
+        tagline:
+          type: string
+        description:
+          type: string
+        features:
+          type: array
+          items:
+            type: string
+        startingPrice:
+          type: integer
+
+    StatsSummary:
+      type: object
+      required: [clientsServed, revenueGenerated, hoursAutomated, avgLeadIncrease]
+      properties:
+        clientsServed:
+          type: integer
+        revenueGenerated:
+          type: string
+        hoursAutomated:
+          type: integer
+        avgLeadIncrease:
+          type: string
