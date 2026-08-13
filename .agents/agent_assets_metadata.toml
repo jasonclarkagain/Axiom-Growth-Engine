@@ -1,0 +1,9 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "x5PcWmRnPah5dGeLTGMdq"
+uri = "file://axiom-digital-core-source.zip"
+type = "unspecified"
+title = "Axiom Digital Core source"
+description = "Complete project source and configuration archive, excluding dependencies, caches, Git history, and secret files."
